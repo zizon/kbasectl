@@ -55,7 +55,13 @@ func MaybeCreate(client Client, obj NamesapcedObject) {
 		case http.StatusCreated, http.StatusConflict:
 			//pass
 		default:
-			panichain.Propogate(fmt.Errorf("fail ensure exist: %s/%s %v", basepath, obj.Name, response))
+			body, _ := ioutil.ReadAll(response.Body)
+			panichain.Propogate(fmt.Errorf("fail ensure exist: %s/%s %s %s",
+				basepath,
+				obj.Name,
+				response.Status,
+				body,
+			))
 			return
 		}
 	}
