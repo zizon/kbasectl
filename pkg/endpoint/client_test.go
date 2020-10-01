@@ -1,12 +1,14 @@
 package endpoint
 
 import (
+	"errors"
 	"flag"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/zizon/kbasectl/pkg/panichain"
 	"k8s.io/klog"
 )
 
@@ -15,34 +17,25 @@ func TestClient(t *testing.T) {
 	klog.InitFlags(flagset)
 	flagset.Set("v", "10")
 
-	config, err := NewDefaultConfig()
-	if err != nil {
-		t.Errorf("fail to create config :%v", err)
-		return
-	}
+	config := NewDefaultConfig()
 	t.Logf("read config:%v", config)
 
-	client, err := NewAPIClient(config)
-	if err != nil {
-		t.Errorf("fail create api client:%v", err)
-		return
-	}
-
-	resp, err := client.Do(http.Request{
+	client := NewAPIClient(config)
+	resp := client.Do(http.Request{
 		Method: "GET",
 		URL: &url.URL{
 			Path: "/api/v1/namespaces",
 		},
 	})
-	if err != nil {
-		t.Errorf("fail plain request:%v", err)
-		return
-	}
 
 	direct, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("fail plain response:%v", err)
-		return
-	}
+	panichain.Propogate(err)
+
 	t.Logf("direct:%s", string(direct))
+
+	defer panichain.Catch(func(err error) error {
+		t.Log(err)
+		return nil
+	})
+	panichain.Propogate(errors.New("intented"))
 }

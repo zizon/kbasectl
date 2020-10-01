@@ -5,9 +5,9 @@ import (
 	"os"
 	"path"
 
+	"github.com/zizon/kbasectl/pkg/panichain"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
 )
 
 var (
@@ -17,20 +17,23 @@ var (
 
 type Config struct {
 	Rest rest.Config
+	Ceph Ceph
 }
 
-func NewDefaultConfig() (Config, error) {
+type Ceph struct {
+	Monitors []string
+	User     string
+	Token    string
+}
+
+func NewDefaultConfig() Config {
 	config := Config{}
 
 	raw, err := ioutil.ReadFile(DefaultConfigFile)
-	if err != nil {
-		klog.Errorf("fail to read default config: %s reason: %v", DefaultConfigFile, err)
-		return config, err
-	}
+	panichain.Propogate(err)
 
-	if err := yaml.Unmarshal(raw, &config); err != nil {
-		klog.Errorf("fail to decode config:%s reason: %v", DefaultConfigFile, err)
-	}
+	err = yaml.Unmarshal(raw, &config)
+	panichain.Propogate(err)
 
-	return config, nil
+	return config
 }

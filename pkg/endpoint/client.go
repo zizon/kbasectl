@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/zizon/kbasectl/pkg/panichain"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
 )
 
 type Client interface {
-	Do(request http.Request) (*http.Response, error)
+	Do(request http.Request) http.Response
 }
 
 type client struct {
@@ -18,12 +18,10 @@ type client struct {
 	header http.Header
 }
 
-func NewAPIClient(config Config) (Client, error) {
+func NewAPIClient(config Config) Client {
 	rt, err := rest.TransportFor(&config.Rest)
-	if err != nil {
-		klog.Errorf("fail create client with config: %v reason: %v", config, err)
-		return nil, err
-	}
+	panichain.Propogate(err)
+
 	client := client{
 		rt,
 		config.Rest.Host,
@@ -31,10 +29,10 @@ func NewAPIClient(config Config) (Client, error) {
 			"Authorization": []string{fmt.Sprintf("Bearer %s", (&config.Rest).BearerToken)},
 		},
 	}
-	return client, nil
+	return client
 }
 
-func (client client) Do(request http.Request) (*http.Response, error) {
+func (client client) Do(request http.Request) http.Response {
 	request.URL.Scheme = "https"
 	request.URL.Host = client.host
 
@@ -51,5 +49,7 @@ func (client client) Do(request http.Request) (*http.Response, error) {
 
 		request.Header[key] = provided
 	}
-	return client.RoundTrip(&request)
+	resp, err := client.RoundTrip(&request)
+	panichain.Propogate(err)
+	return *resp
 }
