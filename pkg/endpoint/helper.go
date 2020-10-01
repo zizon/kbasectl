@@ -118,18 +118,20 @@ func MaybeUpdate(client Client, update func(NamesapcedObject) NamesapcedObject) 
 	relicated.Object = fetched
 	updated := update(relicated)
 
-	if klog.V(5) {
-		klog.Infof("object before update:%v to:%v", fetched, updated.Object)
-	}
-
 	// 4. update
 	if updated != relicated {
 		response = client.Do(http.Request{
 			Method: "PUT",
 			URL: &url.URL{
-				Path: basepath,
+				Path: path.Join(basepath, obj.Name),
 			},
 			Body: NewRequestBody(updated.Object),
 		})
+
+		switch response.StatusCode {
+		case http.StatusOK:
+		default:
+			panichain.Propogate(fmt.Errorf("fail to update object:%v", updated.Object))
+		}
 	}
 }
