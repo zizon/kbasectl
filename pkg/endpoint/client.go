@@ -3,6 +3,7 @@ package endpoint
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,16 @@ import (
 
 	"github.com/zizon/kbasectl/pkg/panichain"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 )
+
+var (
+	flagset = &flag.FlagSet{}
+)
+
+func init() {
+	klog.InitFlags(flagset)
+}
 
 type Client interface {
 	Do(request http.Request) http.Response
@@ -28,6 +38,10 @@ func NewRequestBody(obj interface{}) io.ReadCloser {
 	raw, err := json.Marshal(obj)
 	panichain.Propogate(err)
 
+	if klog.V(5) {
+		klog.Infof("reqeust body:%s", string(raw))
+	}
+
 	return ioutil.NopCloser(bytes.NewBuffer(raw))
 }
 
@@ -44,6 +58,10 @@ func NewAPIClient(config Config) Client {
 		config,
 	}
 	return client
+}
+
+func SetLogLevel(level int) {
+	flagset.Set("v", fmt.Sprintf("%d", level))
 }
 
 func (client client) Do(request http.Request) http.Response {

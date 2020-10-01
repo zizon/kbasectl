@@ -1,7 +1,6 @@
 package volume
 
 import (
-	"flag"
 	"net/http"
 	"net/url"
 	"testing"
@@ -9,13 +8,10 @@ import (
 	"github.com/zizon/kbasectl/pkg/endpoint"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 )
 
 func TestCreateStorage(t *testing.T) {
-	flagset := &flag.FlagSet{}
-	klog.InitFlags(flagset)
-	flagset.Set("v", "10")
+	endpoint.SetLogLevel(10)
 
 	config := endpoint.NewDefaultConfig()
 	client := endpoint.NewAPIClient(config)

@@ -37,7 +37,5 @@ func CephVolume(mount CephMount) Volume {
 		},
 	}
 
-	pvc := v.Claim()
-
-	return FromKubernetesVolume(pv, pvc)
+	return FromKubernetesVolume(pv, v.Claim())
 }

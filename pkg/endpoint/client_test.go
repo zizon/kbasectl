@@ -2,20 +2,16 @@ package endpoint
 
 import (
 	"errors"
-	"flag"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/zizon/kbasectl/pkg/panichain"
-	"k8s.io/klog"
 )
 
 func TestClient(t *testing.T) {
-	flagset := &flag.FlagSet{}
-	klog.InitFlags(flagset)
-	flagset.Set("v", "10")
+	SetLogLevel(10)
 
 	config := NewDefaultConfig()
 	t.Logf("read config:%v", config)
