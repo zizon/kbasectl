@@ -55,25 +55,62 @@ func FromKubernetesVolume(pv v1.PersistentVolume, pvc v1.PersistentVolumeClaim) 
 	}
 }
 
-func NewVolume(path string, readonly bool, capacityMb int) Volume {
-	name := volumeName(path, readonly)
+type Mountable interface {
+	Mount() Mount
 
-	capacity := resource.NewScaledQuantity(int64(capacityMb), resource.Mega)
+	Apply(v1.PersistentVolume) v1.PersistentVolume
 
-	pv := v1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1.PersistentVolumeSpec{
-			Capacity: v1.ResourceList{
-				v1.ResourceStorage: *capacity,
+	VolumeNmae() string
+}
+
+type Mount struct {
+	Type      string
+	Path      string
+	ReadOnly  bool
+	Capacity  int
+	ApplyFunc func(v1.PersistentVolume) v1.PersistentVolume
+}
+
+func (m Mount) Mount() Mount {
+	return m
+}
+
+func (m Mount) Apply(v v1.PersistentVolume) v1.PersistentVolume {
+	return m.ApplyFunc(v)
+}
+
+func (m Mount) VolumeNmae() string {
+	return fmt.Sprintf("%s-volume-%s-%s", m.Type, func() string {
+		if m.ReadOnly {
+			return "read"
+		}
+
+		return "readwrite"
+	}(), safeVolumeName.ReplaceAllString(m.Path, "-"))
+}
+
+func NewVolume(mountable Mountable) Volume {
+	mount := mountable.Mount()
+	name := mountable.VolumeNmae()
+
+	capacity := resource.NewScaledQuantity(int64(mount.Capacity), resource.Mega)
+
+	pv := mount.Apply(
+		v1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
 			},
-			AccessModes: []v1.PersistentVolumeAccessMode{
-				v1.ReadWriteMany, v1.ReadOnlyMany,
+			Spec: v1.PersistentVolumeSpec{
+				Capacity: v1.ResourceList{
+					v1.ResourceStorage: *capacity,
+				},
+				AccessModes: []v1.PersistentVolumeAccessMode{
+					v1.ReadWriteMany, v1.ReadOnlyMany,
+				},
+				PersistentVolumeReclaimPolicy: v1.PersistentVolumeReclaimRetain,
 			},
-			PersistentVolumeReclaimPolicy: v1.PersistentVolumeReclaimRetain,
 		},
-	}
+	)
 
 	pvc := v1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,7 +118,7 @@ func NewVolume(path string, readonly bool, capacityMb int) Volume {
 		},
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: func() []v1.PersistentVolumeAccessMode {
-				if readonly {
+				if mount.ReadOnly {
 					return []v1.PersistentVolumeAccessMode{v1.ReadOnlyMany}
 				}
 

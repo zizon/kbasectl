@@ -53,19 +53,28 @@ func TestCreateStorage(t *testing.T) {
 	)
 
 	// 3. prepare volume
-	mount := CephMount{
-		Path:     "/template",
-		ReadOnly: true,
-		Capacity: 1024,
+	cephVolume := NewCephVolume(CephMount{
+		Mount: Mount{
+			Type:     "ceph",
+			Path:     "/template",
+			ReadOnly: true,
+			Capacity: 1024,
+		},
 
 		Monitors:  config.Ceph.Monitors,
 		User:      config.Ceph.User,
 		TokenName: tokenName,
-	}
-	cephVolume := CephVolume(mount)
-
-	// 4. create pv
+	})
 	CreateStorage(client, "ceph-test", cephVolume)
+
+	// 4. local volume
+	localVolume := NewLocalVolume(Mount{
+		Type:     "local",
+		Path:     "/tmp",
+		ReadOnly: false,
+		Capacity: 1,
+	})
+	CreateStorage(client, "ceph-test", localVolume)
 
 	// 5. cleanup
 	client.Do(http.Request{
