@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	HOME, nil         = os.UserHomeDir()
+	HOME, _           = os.UserHomeDir()
 	DefaultConfigFile = path.Join(HOME, ".kbasectl", "config.yaml")
 )
 

@@ -3,6 +3,8 @@ package endpoint
 import (
 	"flag"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"testing"
 
 	"k8s.io/klog"
@@ -26,7 +28,12 @@ func TestClient(t *testing.T) {
 		return
 	}
 
-	resp, err := client.Get("/api/v1/namespaces")
+	resp, err := client.Do(http.Request{
+		Method: "GET",
+		URL: &url.URL{
+			Path: "/api/v1/namespaces",
+		},
+	})
 	if err != nil {
 		t.Errorf("fail plain request:%v", err)
 		return
