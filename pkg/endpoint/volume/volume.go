@@ -1,4 +1,4 @@
-package ceph
+package volume
 
 import (
 	"fmt"
@@ -47,6 +47,14 @@ func (v volume) Capcity() resource.Quantity {
 	return v.capacity
 }
 
+func FromKubernetesVolume(pv v1.PersistentVolume, pvc v1.PersistentVolumeClaim) Volume {
+	return volume{
+		pv:       pv,
+		pvc:      pvc,
+		capacity: *pv.Spec.Capacity.Storage(),
+	}
+}
+
 func NewVolume(path string, readonly bool, capacityMb int) Volume {
 	name := volumeName(path, readonly)
 
@@ -86,9 +94,5 @@ func NewVolume(path string, readonly bool, capacityMb int) Volume {
 		},
 	}
 
-	return volume{
-		pv:       pv,
-		capacity: *capacity,
-		pvc:      pvc,
-	}
+	return FromKubernetesVolume(pv, pvc)
 }

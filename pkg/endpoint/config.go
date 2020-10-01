@@ -13,6 +13,7 @@ import (
 var (
 	HOME, _           = os.UserHomeDir()
 	DefaultConfigFile = path.Join(HOME, ".kbasectl", "config.yaml")
+	Namespace         = "kbase"
 )
 
 type Config struct {

@@ -1,7 +1,11 @@
 package endpoint
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/zizon/kbasectl/pkg/panichain"
@@ -10,12 +14,21 @@ import (
 
 type Client interface {
 	Do(request http.Request) http.Response
+	Config() Config
 }
 
 type client struct {
 	http.RoundTripper
 	host   string
 	header http.Header
+	config Config
+}
+
+func NewRequestBody(obj interface{}) io.ReadCloser {
+	raw, err := json.Marshal(obj)
+	panichain.Propogate(err)
+
+	return ioutil.NopCloser(bytes.NewBuffer(raw))
 }
 
 func NewAPIClient(config Config) Client {
@@ -28,6 +41,7 @@ func NewAPIClient(config Config) Client {
 		http.Header{
 			"Authorization": []string{fmt.Sprintf("Bearer %s", (&config.Rest).BearerToken)},
 		},
+		config,
 	}
 	return client
 }
@@ -52,4 +66,8 @@ func (client client) Do(request http.Request) http.Response {
 	resp, err := client.RoundTrip(&request)
 	panichain.Propogate(err)
 	return *resp
+}
+
+func (client client) Config() Config {
+	return client.config
 }
