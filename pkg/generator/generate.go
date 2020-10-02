@@ -66,8 +66,7 @@ type LocalBind struct {
 type MemoryBind struct {
 	CapacityMb int
 
-	MountTo  string
-	SubPaths []string
+	MountTo string
 }
 
 type ConfigMapBind struct {
@@ -93,6 +92,9 @@ func (ceph CephBind) toVolumeBind() volumeBind {
 		Source:   ceph.Source,
 		ReadOnly: ceph.ReadOnly,
 	}.VolumeNmae()
+	if len(ceph.SubPaths) == 0 {
+		ceph.SubPaths = []string{""}
+	}
 	return volumeBind{
 		volumeName: name,
 		readOnly:   ceph.ReadOnly,
@@ -113,6 +115,9 @@ func (local LocalBind) toVolumeBind() volumeBind {
 		Source:   local.Source,
 		ReadOnly: local.ReadOnly,
 	}.VolumeNmae()
+	if len(local.SubPaths) == 0 {
+		local.SubPaths = []string{""}
+	}
 	return volumeBind{
 		volumeName: name,
 		readOnly:   local.ReadOnly,
@@ -123,6 +128,7 @@ func (local LocalBind) toVolumeBind() volumeBind {
 				ReadOnly:  local.ReadOnly,
 			},
 		},
+		subPath: local.SubPaths,
 	}
 }
 
@@ -136,13 +142,13 @@ func (memory MemoryBind) toVolumeBind() volumeBind {
 		volumeName: name,
 		readOnly:   false,
 		mountTo:    memory.MountTo,
-		subPath:    memory.SubPaths,
 		source: v1.VolumeSource{
 			EmptyDir: &v1.EmptyDirVolumeSource{
 				Medium:    v1.StorageMediumMemory,
 				SizeLimit: resource.NewScaledQuantity(int64(memory.CapacityMb), resource.Mega),
 			},
 		},
+		subPath: []string{""},
 	}
 }
 
@@ -253,6 +259,9 @@ func GenerateDeployment(config Config) appv1.Deployment {
 			Value: value,
 		})
 	}
+
+	// setback
+	deployment.Spec.Template.Spec.Containers = []v1.Container{container}
 
 	return deployment
 }
@@ -375,11 +384,19 @@ func GenerateSecret(config Config) []v1.Secret {
 	secrets := map[string]v1.Secret{}
 
 	for _, ceph := range config.CephBinds {
-		secrets[fmt.Sprintf("%s/%s", ceph.TokenNamespace, ceph.TokenName)] = v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: config.Namespace,
-				Name:      config.Name,
-			},
+		lookup := fmt.Sprintf("%s/%s", ceph.TokenNamespace, ceph.TokenName)
+		if sescret, exists := secrets[lookup]; exists {
+			sescret.StringData[ceph.User] = ""
+		} else {
+			secrets[lookup] = v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: config.Namespace,
+					Name:      config.Name,
+				},
+				StringData: map[string]string{
+					ceph.User: "",
+				},
+			}
 		}
 	}
 
