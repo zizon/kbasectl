@@ -33,9 +33,7 @@ func NewPod(config PodConfig) v1.Pod {
 			Labels: config.Labels,
 		},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				NewContaienr(config.Container),
-			},
+			Containers:  []v1.Container{NewContaienr(config.Container)},
 			HostNetwork: true,
 			SecurityContext: &v1.PodSecurityContext{
 				RunAsUser:  &uid,

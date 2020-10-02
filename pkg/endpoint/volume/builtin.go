@@ -1,27 +1,28 @@
 package volume
 
 import (
-	"github.com/zizon/kbasectl/pkg/endpoint"
 	v1 "k8s.io/api/core/v1"
 )
 
 type CephMount struct {
 	Mount
 
-	Monitors  []string
-	User      string
-	TokenName string
+	Monitors []string
+	User     string
+
+	TokenName      string
+	TokenNamespace string
 }
 
 func NewCephVolume(mount CephMount) Volume {
-	mount.Mount.ApplyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
+	mount.Mount.applyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
 		v.Spec.PersistentVolumeSource.CephFS = &v1.CephFSPersistentVolumeSource{
 			Monitors: mount.Monitors,
-			Path:     mount.Path,
+			Path:     mount.Source,
 			User:     mount.User,
 			SecretRef: &v1.SecretReference{
 				Name:      mount.TokenName,
-				Namespace: endpoint.Namespace,
+				Namespace: mount.TokenNamespace,
 			},
 		}
 		return v
@@ -30,7 +31,7 @@ func NewCephVolume(mount CephMount) Volume {
 }
 
 func NewLocalVolume(mount Mount) Volume {
-	mount.ApplyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
+	mount.applyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
 		v.Spec.NodeAffinity = &v1.VolumeNodeAffinity{
 			Required: &v1.NodeSelector{
 				NodeSelectorTerms: []v1.NodeSelectorTerm{{
@@ -43,7 +44,7 @@ func NewLocalVolume(mount Mount) Volume {
 			},
 		}
 		v.Spec.PersistentVolumeSource.Local = &v1.LocalVolumeSource{
-			Path: mount.Path,
+			Path: mount.Source,
 		}
 		return v
 	}

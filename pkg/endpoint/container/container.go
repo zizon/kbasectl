@@ -21,6 +21,9 @@ type ContainerConfig struct {
 	Image    string
 	CPU      int
 	MemoryMb int
+
+	Entrypoint string
+	WorkDir    string
 }
 
 func NewContaienr(config ContainerConfig) v1.Container {
@@ -33,7 +36,9 @@ func NewContaienr(config ContainerConfig) v1.Container {
 				v1.ResourceMemory: *resource.NewScaledQuantity(int64(config.MemoryMb), resource.Mega),
 			},
 		},
-		Env: builtinEnvs(config),
+		Env:        builtinEnvs(config),
+		WorkingDir: config.WorkDir,
+		Command:    []string{config.Entrypoint},
 	}
 }
 

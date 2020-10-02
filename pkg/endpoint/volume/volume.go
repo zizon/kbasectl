@@ -65,10 +65,10 @@ type Mountable interface {
 
 type Mount struct {
 	Type      string
-	Path      string
+	Source    string
 	ReadOnly  bool
 	Capacity  int
-	ApplyFunc func(v1.PersistentVolume) v1.PersistentVolume
+	applyFunc func(v1.PersistentVolume) v1.PersistentVolume
 }
 
 func (m Mount) Mount() Mount {
@@ -76,7 +76,7 @@ func (m Mount) Mount() Mount {
 }
 
 func (m Mount) Apply(v v1.PersistentVolume) v1.PersistentVolume {
-	return m.ApplyFunc(v)
+	return m.applyFunc(v)
 }
 
 func (m Mount) VolumeNmae() string {
@@ -86,7 +86,7 @@ func (m Mount) VolumeNmae() string {
 		}
 
 		return "readwrite"
-	}(), safeVolumeName.ReplaceAllString(m.Path, "-"))
+	}(), safeVolumeName.ReplaceAllString(m.Source, "-"))
 }
 
 func NewVolume(mountable Mountable) Volume {
