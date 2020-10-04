@@ -65,7 +65,7 @@ func NewGenerateComand() *cobra.Command {
 
 		Short: "generate necessary kubernates configs to actiave deployment specified by kbasectl deploy config",
 		Run: func(cmd *cobra.Command, args []string) {
-			run()
+			generate()
 		},
 	}
 
@@ -76,7 +76,7 @@ func NewGenerateComand() *cobra.Command {
 	return command
 }
 
-func run() {
+func generate() {
 	// load kbasectl config
 	panichain.Propogate(viper.ReadInConfig())
 	clientConfig := endpoint.Config{}
