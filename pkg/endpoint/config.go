@@ -1,19 +1,13 @@
 package endpoint
 
 import (
-	"io/ioutil"
-	"os"
-	"path"
-
+	"github.com/spf13/viper"
 	"github.com/zizon/kbasectl/pkg/panichain"
-	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
 )
 
 var (
-	HOME, _           = os.UserHomeDir()
-	DefaultConfigFile = path.Join(HOME, ".kbasectl", "config.yaml")
-	Namespace         = "kbase"
+	Namespace = "kbase"
 )
 
 type Config struct {
@@ -30,11 +24,7 @@ type Ceph struct {
 func NewDefaultConfig() Config {
 	config := Config{}
 
-	raw, err := ioutil.ReadFile(DefaultConfigFile)
-	panichain.Propogate(err)
-
-	err = yaml.Unmarshal(raw, &config)
-	panichain.Propogate(err)
+	panichain.Propogate(viper.Unmarshal(&config))
 
 	return config
 }

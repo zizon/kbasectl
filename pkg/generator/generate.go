@@ -70,6 +70,7 @@ type MemoryBind struct {
 }
 
 type ConfigMapBind struct {
+	name      string
 	MountTo   string
 	ConfigMap map[string]string
 }
@@ -92,9 +93,6 @@ func (ceph CephBind) toVolumeBind() volumeBind {
 		Source:   ceph.Source,
 		ReadOnly: ceph.ReadOnly,
 	}.VolumeNmae()
-	if len(ceph.SubPaths) == 0 {
-		ceph.SubPaths = []string{""}
-	}
 	return volumeBind{
 		volumeName: name,
 		readOnly:   ceph.ReadOnly,
@@ -115,9 +113,6 @@ func (local LocalBind) toVolumeBind() volumeBind {
 		Source:   local.Source,
 		ReadOnly: local.ReadOnly,
 	}.VolumeNmae()
-	if len(local.SubPaths) == 0 {
-		local.SubPaths = []string{""}
-	}
 	return volumeBind{
 		volumeName: name,
 		readOnly:   local.ReadOnly,
@@ -152,6 +147,21 @@ func (memory MemoryBind) toVolumeBind() volumeBind {
 	}
 }
 
+func (configMap ConfigMapBind) toVolumeBind() volumeBind {
+	return volumeBind{
+		volumeName: configMap.name,
+		readOnly:   true,
+		mountTo:    configMap.MountTo,
+		source: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: configMap.name,
+				},
+			},
+		},
+	}
+}
+
 const (
 	CephBindVolumeType      = "ceph"
 	LocalBindVolumeType     = "local"
@@ -183,22 +193,8 @@ func GenerateDeployment(config Config) appv1.Deployment {
 	}
 
 	// config map
-	volumeBinds = append(volumeBinds, volumeBind{
-		volumeName: volume.Mount{
-			Type:     ConfigMapBindVolumeType,
-			ReadOnly: true,
-			Source:   config.ConfigBind.MountTo,
-		}.VolumeNmae(),
-		mountTo:  config.ConfigBind.MountTo,
-		readOnly: true,
-		source: v1.VolumeSource{
-			ConfigMap: &v1.ConfigMapVolumeSource{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: config.ConfigMapName(),
-				},
-			},
-		},
-	})
+	config.ConfigBind.name = config.ConfigMapName()
+	volumeBinds = append(volumeBinds, config.ConfigBind.toVolumeBind())
 
 	podVolumes := map[string]v1.Volume{}
 	mounts := map[string]v1.VolumeMount{}
@@ -209,8 +205,13 @@ func GenerateDeployment(config Config) appv1.Deployment {
 			VolumeSource: bind.source,
 		}
 
+		if len(bind.subPath) == 0 {
+			bind.subPath = append(bind.subPath, "")
+		}
+
 		for _, subPath := range bind.subPath {
-			mounts[bind.volumeName] = v1.VolumeMount{
+			lookup := fmt.Sprintf("%s-%s", bind.volumeName, subPath)
+			mounts[lookup] = v1.VolumeMount{
 				Name:        bind.volumeName,
 				ReadOnly:    bind.readOnly,
 				MountPath:   bind.mountTo,
@@ -374,7 +375,7 @@ func GenerateConfigMap(config Config) v1.ConfigMap {
 	return v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: config.Namespace,
-			Name:      config.Name,
+			Name:      config.ConfigMapName(),
 		},
 		Data: config.ConfigBind.ConfigMap,
 	}
@@ -390,8 +391,8 @@ func GenerateSecret(config Config) []v1.Secret {
 		} else {
 			secrets[lookup] = v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: config.Namespace,
-					Name:      config.Name,
+					Namespace: ceph.TokenNamespace,
+					Name:      ceph.TokenName,
 				},
 				StringData: map[string]string{
 					ceph.User: "",

@@ -72,7 +72,7 @@ func RewriteWithCepConfig(config Config, monitorToConfig map[string]CephConfig) 
 
 func RewriteWithLocalConfigFiles(config Config, localFileMap map[string]string) Config {
 	if config.ConfigBind.MountTo == "" {
-		config.ConfigBind.MountTo = "/"
+		config.ConfigBind.MountTo = "/configmaps"
 	}
 
 	if config.ConfigBind.ConfigMap == nil {
@@ -80,12 +80,13 @@ func RewriteWithLocalConfigFiles(config Config, localFileMap map[string]string) 
 	}
 
 	fileToContent := config.ConfigBind.ConfigMap
-	for mapTo, local := range localFileMap {
-		content, err := ioutil.ReadFile(local)
+	for mapTo, from := range localFileMap {
+		content, err := ioutil.ReadFile(from)
 		panichain.Propogate(err)
 
 		fileToContent[mapTo] = string(content)
 	}
+	config.ConfigBind.ConfigMap = fileToContent
 
 	return config
 }

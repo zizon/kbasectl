@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/zizon/kbasectl/pkg/endpoint"
+	"github.com/spf13/viper"
 	"github.com/zizon/kbasectl/pkg/panichain"
 	"gopkg.in/yaml.v2"
 )
@@ -78,9 +78,10 @@ func TestGenerationPrint(t *testing.T) {
 
 	// file configmap
 	config = fillLocalCongfigFile(config)
+
 	config = RewriteWithLocalConfigFiles(config, map[string]string{
-		"/etc/kbasectl.yaml":         endpoint.DefaultConfigFile,
-		"/home/nobody/kbasectl.yaml": endpoint.DefaultConfigFile,
+		"/etc/kbasectl.yaml":         viper.ConfigFileUsed(),
+		"/home/nobody/kbasectl.yaml": viper.ConfigFileUsed(),
 	})
 
 	docs := []interface{}{}
