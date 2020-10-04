@@ -16,6 +16,7 @@ const (
 func KubernatesObjectsToYaml(objects []runtime.Object) []byte {
 	buf := bytes.Buffer{}
 	for _, obj := range objects {
+		annotateWithVersion(obj)
 		buf.WriteString("---\n")
 		if out, err := yaml.Marshal(obj); err != nil {
 			panichain.Propogate(err)

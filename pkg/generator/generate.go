@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/zizon/kbasectl/pkg/endpoint/container"
 	"github.com/zizon/kbasectl/pkg/endpoint/volume"
@@ -214,7 +215,7 @@ func GenerateDeployment(config Config) appv1.Deployment {
 			mounts[lookup] = v1.VolumeMount{
 				Name:        bind.volumeName,
 				ReadOnly:    bind.readOnly,
-				MountPath:   bind.mountTo,
+				MountPath:   path.Join(bind.mountTo, subPath),
 				SubPathExpr: subPath,
 			}
 		}
@@ -263,7 +264,6 @@ func GenerateDeployment(config Config) appv1.Deployment {
 
 	// setback
 	deployment.Spec.Template.Spec.Containers = []v1.Container{container}
-
 	return deployment
 }
 

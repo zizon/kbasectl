@@ -34,12 +34,16 @@ func template() {
 	}
 
 	if out, err := yaml.Marshal(&Config{
+		Namespace: "test-namespace",
+		Name:      "test-deploy",
 		Labels: map[string]string{
 			"label-key": "label-value",
 		},
 		Envs: map[string]string{
 			"env-key": "env-value",
 		},
+
+		Image: "docker.io/golang:v15.2",
 
 		ConfigFiles: []FileMap{
 			{

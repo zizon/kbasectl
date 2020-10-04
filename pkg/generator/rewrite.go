@@ -83,7 +83,6 @@ func RewriteWithLocalConfigFiles(config Config, localFileMap map[string]string) 
 	for mapTo, from := range localFileMap {
 		content, err := ioutil.ReadFile(from)
 		panichain.Propogate(err)
-
 		fileToContent[mapTo] = string(content)
 	}
 	config.ConfigBind.ConfigMap = fileToContent
