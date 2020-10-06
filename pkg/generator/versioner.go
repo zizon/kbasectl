@@ -1,4 +1,4 @@
-package defaults
+package generator
 
 import (
 	"github.com/zizon/kbasectl/pkg/panichain"

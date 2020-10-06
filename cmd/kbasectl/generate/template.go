@@ -26,7 +26,6 @@ func NewTemplateCommand() *cobra.Command {
 
 func template() {
 	// load kbasectl config
-	panichain.Propogate(viper.ReadInConfig())
 	clientConfig := endpoint.Config{}
 	if err := viper.Unmarshal(&clientConfig); err != nil {
 		panichain.Propogate(err)

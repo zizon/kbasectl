@@ -264,6 +264,7 @@ func GenerateDeployment(config Config) appv1.Deployment {
 
 	// setback
 	deployment.Spec.Template.Spec.Containers = []v1.Container{container}
+	annotateWithVersion(&deployment)
 	return deployment
 }
 
@@ -272,7 +273,7 @@ func GeneratePersistenVolume(config Config) []v1.PersistentVolume {
 
 	// ceph
 	for _, cephVolume := range config.CephBinds {
-		pv := volume.NewCephVolume(volume.CephMount{
+		pv := volume.NewCephVolume(config.Namespace, volume.CephMount{
 			Monitors: cephVolume.Monitors,
 			User:     cephVolume.User,
 
@@ -291,7 +292,7 @@ func GeneratePersistenVolume(config Config) []v1.PersistentVolume {
 
 	// local
 	for _, localVolume := range config.LocalBinds {
-		pv := volume.NewLocalVolume(volume.Mount{
+		pv := volume.NewLocalVolume(config.Namespace, volume.Mount{
 			Type:     LocalBindVolumeType,
 			Source:   localVolume.Source,
 			ReadOnly: localVolume.ReadOnly,
@@ -302,6 +303,7 @@ func GeneratePersistenVolume(config Config) []v1.PersistentVolume {
 
 	sliceVolumes := []v1.PersistentVolume{}
 	for _, v := range volumes {
+		annotateWithVersion(&v)
 		sliceVolumes = append(sliceVolumes, v)
 	}
 	return sliceVolumes
@@ -312,7 +314,7 @@ func GeneratePersistenVolumeClaim(config Config) []v1.PersistentVolumeClaim {
 
 	// ceph
 	for _, cephVolume := range config.CephBinds {
-		pvc := volume.NewCephVolume(volume.CephMount{
+		pvc := volume.NewCephVolume(config.Namespace, volume.CephMount{
 			Monitors: cephVolume.Monitors,
 			User:     cephVolume.User,
 
@@ -331,7 +333,7 @@ func GeneratePersistenVolumeClaim(config Config) []v1.PersistentVolumeClaim {
 
 	// local
 	for _, localClaim := range config.LocalBinds {
-		pvc := volume.NewLocalVolume(volume.Mount{
+		pvc := volume.NewLocalVolume(config.Namespace, volume.Mount{
 			Type:     LocalBindVolumeType,
 			Source:   localClaim.Source,
 			ReadOnly: localClaim.ReadOnly,
@@ -342,6 +344,7 @@ func GeneratePersistenVolumeClaim(config Config) []v1.PersistentVolumeClaim {
 
 	sliceClaims := []v1.PersistentVolumeClaim{}
 	for _, v := range volumeClaims {
+		annotateWithVersion(&v)
 		sliceClaims = append(sliceClaims, v)
 	}
 	return sliceClaims
@@ -366,19 +369,23 @@ func GenerateNamespace(config Config) []v1.Namespace {
 
 	sliceNamesapces := []v1.Namespace{}
 	for _, ns := range namespaces {
+		annotateWithVersion(&ns)
 		sliceNamesapces = append(sliceNamesapces, ns)
 	}
 	return sliceNamesapces
 }
 
 func GenerateConfigMap(config Config) v1.ConfigMap {
-	return v1.ConfigMap{
+	configmap := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: config.Namespace,
 			Name:      config.ConfigMapName(),
 		},
 		Data: config.ConfigBind.ConfigMap,
 	}
+
+	annotateWithVersion(&configmap)
+	return configmap
 }
 
 func GenerateSecret(config Config) []v1.Secret {
@@ -403,6 +410,7 @@ func GenerateSecret(config Config) []v1.Secret {
 
 	sliceSecret := []v1.Secret{}
 	for _, s := range secrets {
+		annotateWithVersion(&s)
 		sliceSecret = append(sliceSecret, s)
 	}
 	return sliceSecret

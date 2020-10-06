@@ -1,19 +1,29 @@
 package generate
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
+	"path"
+	"reflect"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/zizon/kbasectl/cmd/kbasectl/defaults"
+	"github.com/zizon/kbasectl/pkg/context"
 	"github.com/zizon/kbasectl/pkg/endpoint"
 	"github.com/zizon/kbasectl/pkg/generator"
 	"github.com/zizon/kbasectl/pkg/panichain"
 	"gopkg.in/yaml.v2"
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog"
 )
 
 type Config struct {
@@ -56,7 +66,8 @@ type CephBind struct {
 }
 
 var (
-	from string
+	from    string
+	minimal bool
 )
 
 func NewGenerateComand() *cobra.Command {
@@ -73,12 +84,13 @@ func NewGenerateComand() *cobra.Command {
 	command.MarkFlagFilename("from", "yaml")
 	command.MarkFlagRequired("from")
 
+	command.Flags().BoolVarP(&minimal, "minimal", "m", false, "whether or not to output configs that already exists in kubernets cluster")
+
 	return command
 }
 
 func generate() {
 	// load kbasectl config
-	panichain.Propogate(viper.ReadInConfig())
 	clientConfig := endpoint.Config{}
 	if err := viper.Unmarshal(&clientConfig); err != nil {
 		panichain.Propogate(err)
@@ -140,7 +152,29 @@ func generate() {
 		return &deployment
 	}(generator.GenerateDeployment(generatorConfig)))
 
-	os.Stdout.Write(defaults.KubernatesObjectsToYaml(objects))
+	filtered := objects
+	if minimal {
+		batcher := context.NewBatcher()
+		filtered = []runtime.Object{}
+		client := endpoint.NewAPIClient(endpoint.NewDefaultConfig())
+		for _, obj := range objects {
+			local := obj
+			batcher.Add(func() interface{} {
+				if existsInKubernetes(client, local) {
+					return nil
+				}
+				return local
+			})
+		}
+
+		for obj := range batcher.Join() {
+			if obj != nil {
+				filtered = append(filtered, obj.(runtime.Object))
+			}
+		}
+	}
+
+	os.Stdout.Write(defaults.KubernatesObjectsToYaml(filtered))
 	return
 }
 
@@ -209,4 +243,55 @@ func convertCephBind(binds []CephBind, ceph endpoint.Ceph) []generator.CephBind 
 	}
 
 	return generatorCephBinds
+}
+
+func existsInKubernetes(client endpoint.Client, obj runtime.Object) bool {
+	value := reflect.ValueOf(obj).Elem()
+	metaField := value.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
+
+	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	urlPath := path.Join("/",
+		apiPath(gvk),
+		gvk.Group,
+		gvk.Version)
+	if metaField.Namespace != "" {
+		urlPath = path.Join(urlPath,
+			"namespaces",
+			metaField.Namespace,
+			apiKind(gvk),
+			metaField.Name,
+		)
+	} else {
+		urlPath = path.Join(urlPath,
+			apiKind(gvk),
+			metaField.Name,
+		)
+	}
+
+	resp := client.Do(http.Request{
+		Method: "GET",
+		URL: &url.URL{
+			Path: urlPath,
+		},
+	})
+	if resp.StatusCode == http.StatusOK {
+		return true
+	}
+	klog.Errorf("bad response:%v", resp)
+
+	return false
+}
+
+func apiKind(gvk schema.GroupVersionKind) string {
+	return fmt.Sprintf("%ss", strings.ToLower(gvk.Kind))
+}
+
+func apiPath(gvk schema.GroupVersionKind) string {
+	switch gvk.Kind {
+	case "Deployment":
+		return "apis"
+	default:
+		return "api"
+	}
 }

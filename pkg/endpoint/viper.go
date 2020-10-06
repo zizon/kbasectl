@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"github.com/spf13/viper"
+	"github.com/zizon/kbasectl/pkg/panichain"
 )
 
 func init() {
@@ -9,4 +10,6 @@ func init() {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("$HOME/.kbasectl")
 	viper.AddConfigPath(".")
+
+	panichain.Propogate(viper.ReadInConfig())
 }

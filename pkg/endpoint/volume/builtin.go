@@ -14,7 +14,7 @@ type CephMount struct {
 	TokenNamespace string
 }
 
-func NewCephVolume(mount CephMount) Volume {
+func NewCephVolume(namespace string, mount CephMount) Volume {
 	mount.Mount.applyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
 		v.Spec.PersistentVolumeSource.CephFS = &v1.CephFSPersistentVolumeSource{
 			Monitors: mount.Monitors,
@@ -27,10 +27,10 @@ func NewCephVolume(mount CephMount) Volume {
 		}
 		return v
 	}
-	return NewVolume(mount.Mount)
+	return NewPersistentVolume(namespace, mount.Mount)
 }
 
-func NewLocalVolume(mount Mount) Volume {
+func NewLocalVolume(namespace string, mount Mount) Volume {
 	mount.applyFunc = func(v v1.PersistentVolume) v1.PersistentVolume {
 		v.Spec.NodeAffinity = &v1.VolumeNodeAffinity{
 			Required: &v1.NodeSelector{
@@ -49,9 +49,5 @@ func NewLocalVolume(mount Mount) Volume {
 		return v
 	}
 
-	return NewVolume(mount)
-}
-
-func NewMemoryVolume(mount Mount) Volume {
-	return NewVolume(mount)
+	return NewPersistentVolume(namespace, mount)
 }

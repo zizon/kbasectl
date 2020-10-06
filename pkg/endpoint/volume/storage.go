@@ -26,7 +26,6 @@ func CreateStorage(client endpoint.Client, namespace string, volume Volume) {
 
 	// 2. pv
 	pv := volume.Get()
-	pv.Namespace = namespace
 	klog.Infof("ensureing pv: %v", pv)
 	endpoint.MaybeCreate(client,
 		endpoint.NamesapcedObject{

@@ -6,11 +6,14 @@ import (
 	"path"
 	"testing"
 
+	"github.com/zizon/kbasectl/pkg/endpoint"
 	"github.com/zizon/kbasectl/pkg/panichain"
 	"gopkg.in/yaml.v2"
 )
 
 func TestGenerate(t *testing.T) {
+	endpoint.SetLogLevel(10)
+
 	configDir, err := ioutil.TempDir("", "test-generate-cmd")
 	panichain.Propogate(err)
 	defer os.RemoveAll(configDir)
@@ -43,12 +46,12 @@ func TestGenerate(t *testing.T) {
 		ConfigFiles: []FileMap{
 			{
 				From:     configFile,
-				MapToKey: "/work/config/origin.yaml",
+				MapToKey: "origin.yaml",
 			},
 
 			{
 				From:     configFile,
-				MapToKey: "/work/origin.yaml",
+				MapToKey: "work-origin.yaml",
 			},
 		},
 		CephBind: []CephBind{
@@ -84,6 +87,7 @@ func TestGenerate(t *testing.T) {
 
 	cmd.SetArgs([]string{
 		"-f", configFile,
+		"-m", "true",
 	})
 
 	panichain.Propogate(cmd.Execute())

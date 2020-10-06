@@ -89,7 +89,7 @@ func (m Mount) VolumeNmae() string {
 	}(), safeVolumeName.ReplaceAllString(m.Source, "-"))
 }
 
-func NewVolume(mountable Mountable) Volume {
+func NewPersistentVolume(namespace string, mountable Mountable) Volume {
 	mount := mountable.Mount()
 	name := mountable.VolumeNmae()
 
@@ -114,7 +114,8 @@ func NewVolume(mountable Mountable) Volume {
 
 	pvc := v1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: namespace,
 		},
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: func() []v1.PersistentVolumeAccessMode {
