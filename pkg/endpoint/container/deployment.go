@@ -36,9 +36,10 @@ func NewDeployment(config PodConfig, _replica int) appv1.Deployment {
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      pod.Name,
-					Namespace: pod.Namespace,
-					Labels:    pod.Labels,
+					Name:        pod.Name,
+					Namespace:   pod.Namespace,
+					Labels:      pod.Labels,
+					Annotations: pod.Annotations,
 				},
 				Spec: pod.Spec,
 			},
