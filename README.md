@@ -246,8 +246,291 @@ status: {}
 ...
 ```
 
+# Without Ceph
+Take for example,to setup a `IPFS` node
+```yaml ipfs.yaml
+namespace: ipfs
+name: ipfs-daemon
+runas: 0
+entrypoint: /bin/sh /configmaps/ipfs.sh 
+envs:
+  IPFS_PATH: /work 
+workdir: "/work"
+image: docker.io/ipfs/go-ipfs:v0.7.0
+cpu: 1
+memorymb: 10
+ingressmb: 1
+egressmb: 1
+configfiles:
+  - from: ./config
+    maptokey: config
+  - from: ./ipfs.sh
+    maptokey: ipfs.sh
+replica: 1 
+```
+While config are IPFS config, and `ipfs.sh` start script are looks like below.   
+```sh ipfs.sh
+#!/bin/sh
+/usr/local/bin/ipfs daemon --init --init-config /configmaps/config
+```
+
+Using 
+```bash
+kbasectl gen -f ipfs.yaml > ipfs-k8s.yaml
+```
+
+Genreate
+```yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: ipfs
+spec: {}
+status: {}
+...
+---
+apiVersion: v1
+data:
+  config: |
+    {
+      "API": {
+        "HTTPHeaders": {}
+      },
+      "Addresses": {
+        "API": "/ip4/127.0.0.1/tcp/5001",
+        "Announce": [],
+        "Gateway": "/ip4/127.0.0.1/tcp/8080",
+        "NoAnnounce": [],
+        "Swarm": [
+          "/ip4/0.0.0.0/tcp/4001",
+          "/ip6/::/tcp/4001",
+          "/ip4/0.0.0.0/udp/4001/quic",
+          "/ip6/::/udp/4001/quic"
+        ]
+      },
+      "AutoNAT": {},
+      "Bootstrap": [
+        "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+        "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+        "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+        "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+        "/ip4/104.131.131.82/udp/4001/quic/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+        "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"
+      ],
+      "Datastore": {
+        "BloomFilterSize": 0,
+        "GCPeriod": "1h",
+        "HashOnRead": false,
+        "Spec": {
+          "mounts": [
+            {
+              "child": {
+                "path": "blocks",
+                "shardFunc": "/repo/flatfs/shard/v1/next-to-last/2",
+                "sync": true,
+                "type": "flatfs"
+              },
+              "mountpoint": "/blocks",
+              "prefix": "flatfs.datastore",
+              "type": "measure"
+            },
+            {
+              "child": {
+                "compression": "none",
+                "path": "datastore",
+                "type": "levelds"
+              },
+              "mountpoint": "/",
+              "prefix": "leveldb.datastore",
+              "type": "measure"
+            }
+          ],
+          "type": "mount"
+        },
+        "StorageGCWatermark": 90,
+        "StorageMax": "100MB"
+      },
+      "Discovery": {
+        "MDNS": {
+          "Enabled": true,
+          "Interval": 10
+        }
+      },
+      "DontCheckOSXFUSE": false,
+      "Experimental": {
+        "FilestoreEnabled": true,
+        "GraphsyncEnabled": false,
+        "Libp2pStreamMounting": true,
+        "P2pHttpProxy": false,
+        "ShardingEnabled": false,
+        "StrategicProviding": false,
+        "UrlstoreEnabled": true
+      },
+      "Gateway": {
+        "APICommands": [],
+        "HTTPHeaders": {
+          "Access-Control-Allow-Headers": [
+            "X-Requested-With",
+            "Range",
+            "User-Agent"
+          ],
+          "Access-Control-Allow-Methods": [
+            "GET"
+          ],
+          "Access-Control-Allow-Origin": [
+            "*"
+          ]
+        },
+        "NoDNSLink": false,
+        "NoFetch": false,
+        "PathPrefixes": [],
+        "PublicGateways": null,
+        "RootRedirect": "",
+        "Writable": false
+      },
+      "Identity": {
+        "PeerID": "",
+        "PrivKey": ""
+      },
+      "Ipns": {
+        "RecordLifetime": "",
+        "RepublishPeriod": "",
+        "ResolveCacheSize": 128
+      },
+      "Mounts": {
+        "FuseAllowOther": false,
+        "IPFS": "~/ipfs",
+        "IPNS": "~/ipns"
+      },
+      "Peering": {
+        "Peers": null
+      },
+      "Plugins": {
+        "Plugins": null
+      },
+      "Provider": {
+        "Strategy": ""
+      },
+      "Pubsub": {
+        "DisableSigning": false,
+        "Router": ""
+      },
+      "Reprovider": {
+        "Interval": "12h",
+        "Strategy": "all"
+      },
+      "Routing": {
+        "Type": "dht"
+      },
+      "Swarm": {
+        "AddrFilters": null,
+        "ConnMgr": {
+          "GracePeriod": "60s",
+          "HighWater": 300,
+          "LowWater": 50,
+          "Type": "basic"
+        },
+        "DisableBandwidthMetrics": false,
+        "DisableNatPortMap": false,
+        "EnableAutoRelay": false,
+        "EnableRelayHop": false,
+        "Transports": {
+          "Multiplexers": {},
+          "Network": {
+            "TCP": false,
+            "Websocket": false
+          },
+          "Security": {}
+        }
+      }
+    }
+  ipfs.sh: |
+    #!/bin/bash
+    /usr/local/bin/ipfs daemon --init --init-config /configmaps/config
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: ipfs-daemon-configmap
+  namespace: ipfs
+...
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    kbase-pod: ipfs-daemon
+  name: ipfs-daemon
+  namespace: ipfs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kbase-pod: ipfs-daemon
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        kbase-pod: ipfs-daemon
+      name: ipfs-daemon
+      namespace: ipfs
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - /configmaps/ipfs.sh
+        env:
+        - name: CONTAINER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONTAINER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: CONTAINER_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: IPFS_PATH
+          value: /work
+        image: docker.io/ipfs/go-ipfs:v0.7.0
+        name: ipfs-daemon
+        resources:
+          requests:
+            cpu: "1"
+            memory: 10M
+        volumeMounts:
+        - mountPath: /configmaps
+          name: ipfs-daemon-configmap
+          readOnly: true
+        workingDir: /work
+      hostNetwork: true
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      volumes:
+      - configMap:
+          name: ipfs-daemon-configmap
+        name: ipfs-daemon-configmap
+status: {}
+...
+
+```
+
 # Know Issues
 1. PVs can not be modified after creation.  
   Repeatly apply the sampe config gen above will cause kubectl to complain. To workaround, simple add an -m(inmal) flag to check if a resource already exits in k8s.  
   If so, hide it in generated config
 2. PV/PVC capacity is currently meaning less
+3. Container use host network
