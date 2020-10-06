@@ -1,6 +1,8 @@
 package container
 
 import (
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -38,7 +40,7 @@ func NewContaienr(config ContainerConfig) v1.Container {
 		},
 		Env:        builtinEnvs(config),
 		WorkingDir: config.WorkDir,
-		Command:    []string{config.Entrypoint},
+		Command:    strings.Split(config.Entrypoint, " "),
 	}
 }
 
