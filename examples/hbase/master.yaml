@@ -1,0 +1,41 @@
+namespace: hbase-on-ceph
+name: master
+envs:
+ env-key: env-value
+runas: 0
+entrypoint: /bin/bash /configmaps/entrypoint.sh
+workdir: /work
+image: openjdk/openjdk:8
+cpu: 2
+memorymb: 5120
+ingressmb: 10
+egressmb: 10
+configfiles:
+  - from: ./master.sh
+    maptokey: entrypoint.sh
+  - from: ./conf/hadoop-metrics2-hbase.properties
+    maptokey: hadoop-metrics2-hbase.properties
+  - from: ./conf/hbase-site.xml
+    maptokey: hbase-site.xml
+  - from: ./conf/log4j.properties
+    maptokey: log4j.properties
+replica: 2
+cephbind:
+  - from: /hbase/hbase-2.2.3
+    to: /work
+    readonly: true
+    capacitymb: 65536
+    filter:
+      - bin/hbase
+      - bin/hbase-config.sh
+      - hbase-webapps
+      - lib
+  - from: /logs/hbase/hbase-on-ceph/hbase-on-ceph
+    to: /work/all-logs
+    readonly: false
+    capacitymb: 65536
+  - from: /hbase/roots/hbase-ceph
+    to: /cephfs/hbase/roots/hbase-ceph
+    readonly: false
+    capacitymb: 65536
+
