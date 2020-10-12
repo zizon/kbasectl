@@ -135,14 +135,14 @@ func generate() {
 
 	// collect pv
 	for _, pv := range generator.GeneratePersistenVolume(generatorConfig) {
-		objects = append(objects, func(secret v1.PersistentVolume) runtime.Object {
+		objects = append(objects, func(pv v1.PersistentVolume) runtime.Object {
 			return &pv
 		}(pv))
 	}
 
 	// collect pbv
 	for _, pvc := range generator.GeneratePersistenVolumeClaim(generatorConfig) {
-		objects = append(objects, func(secret v1.PersistentVolumeClaim) runtime.Object {
+		objects = append(objects, func(pvc v1.PersistentVolumeClaim) runtime.Object {
 			return &pvc
 		}(pvc))
 	}
