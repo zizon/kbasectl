@@ -135,18 +135,30 @@ func generate() {
 		return &configMap
 	}(generator.GenerateConfigMap(generatorConfig)))
 
+	client := endpoint.NewAPIClient(endpoint.NewDefaultConfig())
+	batcher := context.NewBatcher()
 	// collect pv
 	for _, pv := range generator.GeneratePersistenVolume(generatorConfig) {
-		objects = append(objects, func(pv v1.PersistentVolume) runtime.Object {
-			return &pv
-		}(pv))
+		local := pv
+		batcher.Add(func() interface{} {
+			if existsInKubernetes(client, &local) {
+				return nil
+			}
+
+			return local
+		})
 	}
 
 	// collect pbv
 	for _, pvc := range generator.GeneratePersistenVolumeClaim(generatorConfig) {
-		objects = append(objects, func(pvc v1.PersistentVolumeClaim) runtime.Object {
-			return &pvc
-		}(pvc))
+		local := pvc
+		batcher.Add(func() interface{} {
+			if existsInKubernetes(client, &local) {
+				return nil
+			}
+
+			return local
+		})
 	}
 
 	// collect deployment
@@ -156,9 +168,7 @@ func generate() {
 
 	filtered := objects
 	if minimal {
-		batcher := context.NewBatcher()
 		filtered = []runtime.Object{}
-		client := endpoint.NewAPIClient(endpoint.NewDefaultConfig())
 		for _, obj := range objects {
 			local := obj
 			batcher.Add(func() interface{} {
@@ -168,11 +178,11 @@ func generate() {
 				return local
 			})
 		}
+	}
 
-		for obj := range batcher.Join() {
-			if obj != nil {
-				filtered = append(filtered, obj.(runtime.Object))
-			}
+	for obj := range batcher.Join() {
+		if obj != nil {
+			filtered = append(filtered, obj.(runtime.Object))
 		}
 	}
 
