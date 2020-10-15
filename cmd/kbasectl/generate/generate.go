@@ -43,6 +43,8 @@ type Config struct {
 	IngressMb int
 	EgressMb  int
 
+	UseContainerNetwork bool
+
 	ConfigFiles []FileMap
 
 	Replica int
@@ -195,6 +197,8 @@ func convertToGeneratorConfig(config Config, clientConfig endpoint.Config) gener
 		MemoryMb:  config.MemoryMb,
 		IngressMb: config.IngressMb,
 		EgressMb:  config.EgressMb,
+
+		HostNetwork: !config.UseContainerNetwork,
 
 		Replica: config.Replica,
 

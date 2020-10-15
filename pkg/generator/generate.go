@@ -29,6 +29,8 @@ type Config struct {
 	IngressMb int
 	EgressMb  int
 
+	HostNetwork bool
+
 	Replica int
 
 	CephBinds   []CephBind

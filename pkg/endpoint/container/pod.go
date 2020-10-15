@@ -7,12 +7,13 @@ import (
 )
 
 type PodConfig struct {
-	Container ContainerConfig
-	Namespace string
-	EgressMb  int
-	IngressMb int
-	RunAS     int
-	Labels    map[string]string
+	Container   ContainerConfig
+	Namespace   string
+	EgressMb    int
+	IngressMb   int
+	RunAS       int
+	Labels      map[string]string
+	HostNetwork bool
 }
 
 func NewPod(config PodConfig) v1.Pod {
@@ -34,7 +35,8 @@ func NewPod(config PodConfig) v1.Pod {
 		},
 		Spec: v1.PodSpec{
 			Containers:  []v1.Container{NewContaienr(config.Container)},
-			HostNetwork: true,
+			HostNetwork: config.HostNetwork,
+			DNSPolicy:   v1.DNSClusterFirstWithHostNet,
 			SecurityContext: &v1.PodSecurityContext{
 				RunAsUser:  &uid,
 				RunAsGroup: &uid,

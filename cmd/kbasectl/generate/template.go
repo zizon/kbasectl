@@ -44,6 +44,8 @@ func template() {
 
 		Image: "docker.io/golang:v15.2",
 
+		UseContainerNetwork: false,
+
 		ConfigFiles: []FileMap{
 			{
 				From:     "/file/path/from/local/fs.file",
