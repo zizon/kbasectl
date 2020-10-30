@@ -46,9 +46,5 @@ func NewPod(config PodConfig) v1.Pod {
 }
 
 func bandwidth(quantity int) *resource.Quantity {
-	if quantity <= 0 {
-		return resource.NewScaledQuantity(100, resource.Mega)
-	}
-
 	return resource.NewScaledQuantity(int64(quantity), resource.Mega)
 }
