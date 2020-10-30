@@ -238,7 +238,9 @@ func GenerateDeployment(config Config) appv1.Deployment {
 
 			WorkDir:    config.WorkDir,
 			Entrypoint: config.Entrypoint,
+			//
 		},
+		HostNetwork: config.HostNetwork,
 	}, config.Replica)
 
 	// set back volume
