@@ -145,7 +145,7 @@ func generate() {
 				return nil
 			}
 
-			return local
+			return &local
 		})
 	}
 
@@ -157,7 +157,7 @@ func generate() {
 				return nil
 			}
 
-			return local
+			return &local
 		})
 	}
 
